@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,25 +19,45 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install Mintlify CLI
         run: npm install -g mintlify
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Start Mintlify and Build
+      - name: Start Mintlify dev server
         run: |
           mintlify dev &
           MINTLIFY_PID=$!
-          sleep 10
-          wget -r -p -k -P _site http://localhost:3000 || true
-          kill $MINTLIFY_PID || true
+          echo "MINTLIFY_PID=$MINTLIFY_PID" >> $GITHUB_ENV
+          echo "Waiting for Mintlify to start..."
+          sleep 30
+
+      - name: Scrape static site
+        run: |
+          wget --recursive \
+               --no-parent \
+               --page-requisites \
+               --html-extension \
+               --convert-links \
+               --restrict-file-names=windows \
+               --domains localhost \
+               --no-host-directories \
+               --directory-prefix=_site \
+               http://localhost:3000/
+
+      - name: Stop Mintlify
+        if: always()
+        run: kill ${{ env.MINTLIFY_PID }} || true
+
+      - name: Fix links for GitHub Pages
+        run: |
+          cd _site
+          find . -name "*.html" -type f -exec sed -i 's|http://localhost:3000||g' {} \;
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_site/localhost:3000
+          publish_dir: ./_site
           publish_branch: gh-pages
+          force_orphan: true
