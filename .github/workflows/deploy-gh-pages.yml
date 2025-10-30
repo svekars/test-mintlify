@@ -49,10 +49,16 @@ jobs:
         if: always()
         run: kill ${{ env.MINTLIFY_PID }} || true
 
-      - name: Fix links for GitHub Pages
+      - name: Fix links and paths for GitHub Pages
         run: |
           cd _site
+          # Remove localhost references
           find . -name "*.html" -type f -exec sed -i 's|http://localhost:3000||g' {} \;
+          # Ensure all absolute paths include /test-mintlify prefix
+          find . -name "*.html" -type f -exec sed -i 's|href="/\([^"]*\)"|href="/test-mintlify/\1"|g' {} \;
+          find . -name "*.html" -type f -exec sed -i 's|src="/\([^"]*\)"|src="/test-mintlify/\1"|g' {} \;
+          # Fix double slashes that might have been created
+          find . -name "*.html" -type f -exec sed -i 's|/test-mintlify/test-mintlify|/test-mintlify|g' {} \;
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

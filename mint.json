@@ -1,6 +1,7 @@
 {
   "$schema": "https://mintlify.com/schema.json",
   "name": "Your API",
+  "basePath": "/test-mintlify",
   "logo": {
     "dark": "/logo/dark.svg",
     "light": "/logo/light.svg"
