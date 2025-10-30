@@ -1,0 +1,394 @@
+---
+title: 'Webhooks'
+description: 'Receive real-time notifications for events in your account'
+---
+
+## Overview
+
+Webhooks allow you to receive real-time notifications about events that happen in your account. When an event occurs, we'll send an HTTP POST request to the URL you've configured.
+
+<Info>
+  Webhooks are the best way to integrate event-driven functionality into your application, such as sending confirmation emails or updating your database in real-time.
+</Info>
+
+## Setting Up Webhooks
+
+<Steps>
+  <Step title="Navigate to Webhooks Settings">
+    Go to your [Dashboard](https://dashboard.example.com) and click on **Settings** → **Webhooks**.
+  </Step>
+
+  <Step title="Add Endpoint">
+    Click **Add Endpoint** and enter your webhook URL. This should be a publicly accessible HTTPS endpoint.
+  </Step>
+
+  <Step title="Select Events">
+    Choose which events you want to receive. You can select all events or specific ones like `user.created`, `payment.completed`, etc.
+  </Step>
+
+  <Step title="Save and Test">
+    Save your endpoint and use the **Send Test** button to verify it's working correctly.
+  </Step>
+</Steps>
+
+## Webhook Events
+
+Here are the most common webhook events:
+
+<Tabs>
+  <Tab title="User Events">
+    | Event | Description |
+    |-------|-------------|
+    | `user.created` | A new user was created |
+    | `user.updated` | User information was updated |
+    | `user.deleted` | A user was deleted |
+    | `user.status_changed` | User status changed (active/inactive/pending) |
+  </Tab>
+
+  <Tab title="Payment Events">
+    | Event | Description |
+    |-------|-------------|
+    | `payment.created` | A new payment was initiated |
+    | `payment.completed` | Payment was successfully processed |
+    | `payment.failed` | Payment processing failed |
+    | `payment.refunded` | Payment was refunded |
+  </Tab>
+
+  <Tab title="Account Events">
+    | Event | Description |
+    |-------|-------------|
+    | `account.updated` | Account settings were changed |
+    | `api_key.created` | New API key was generated |
+    | `api_key.deleted` | API key was deleted |
+  </Tab>
+</Tabs>
+
+## Webhook Payload
+
+All webhook requests contain a JSON payload with event information:
+
+```json
+{
+  "id": "evt_abc123",
+  "type": "user.created",
+  "created": "2024-01-15T10:30:00Z",
+  "data": {
+    "object": {
+      "id": "usr_xyz789",
+      "email": "john@example.com",
+      "name": "John Doe",
+      "status": "active",
+      "created_at": "2024-01-15T10:30:00Z"
+    }
+  },
+  "api_version": "1.0"
+}
+```
+
+### Webhook Object Structure
+
+<ResponseField name="id" type="string">
+  Unique identifier for the event
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  The event type (e.g., `user.created`, `payment.completed`)
+</ResponseField>
+
+<ResponseField name="created" type="string">
+  Timestamp when the event occurred (ISO 8601 format)
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Contains the object related to the event
+
+  <Expandable title="data properties">
+    <ResponseField name="object" type="object">
+      The actual resource (user, payment, etc.) that triggered the event
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="api_version" type="string">
+  The API version used to render the webhook
+</ResponseField>
+
+## Handling Webhooks
+
+### Basic Handler Example
+
+<CodeGroup>
+
+```python Python
+from flask import Flask, request
+import hmac
+import hashlib
+
+app = Flask(__name__)
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    payload = request.get_data()
+    signature = request.headers.get('X-Webhook-Signature')
+
+    # Verify signature
+    if not verify_signature(payload, signature):
+        return 'Invalid signature', 401
+
+    event = request.get_json()
+
+    # Handle different event types
+    if event['type'] == 'user.created':
+        handle_user_created(event['data']['object'])
+    elif event['type'] == 'payment.completed':
+        handle_payment_completed(event['data']['object'])
+
+    return 'Success', 200
+
+def verify_signature(payload, signature):
+    secret = 'your_webhook_secret'
+    expected_signature = hmac.new(
+        secret.encode(),
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected_signature, signature)
+```
+
+```javascript Node.js
+const express = require('express');
+const crypto = require('crypto');
+
+const app = express();
+
+app.post('/webhook', express.raw({type: 'application/json'}), (req, res) => {
+  const payload = req.body;
+  const signature = req.headers['x-webhook-signature'];
+
+  // Verify signature
+  if (!verifySignature(payload, signature)) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  const event = JSON.parse(payload);
+
+  // Handle different event types
+  switch(event.type) {
+    case 'user.created':
+      handleUserCreated(event.data.object);
+      break;
+    case 'payment.completed':
+      handlePaymentCompleted(event.data.object);
+      break;
+  }
+
+  res.status(200).send('Success');
+});
+
+function verifySignature(payload, signature) {
+  const secret = 'your_webhook_secret';
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  );
+}
+```
+
+```ruby Ruby
+require 'sinatra'
+require 'json'
+require 'openssl'
+
+post '/webhook' do
+  payload = request.body.read
+  signature = request.env['HTTP_X_WEBHOOK_SIGNATURE']
+
+  # Verify signature
+  unless verify_signature(payload, signature)
+    halt 401, 'Invalid signature'
+  end
+
+  event = JSON.parse(payload)
+
+  # Handle different event types
+  case event['type']
+  when 'user.created'
+    handle_user_created(event['data']['object'])
+  when 'payment.completed'
+    handle_payment_completed(event['data']['object'])
+  end
+
+  'Success'
+end
+
+def verify_signature(payload, signature)
+  secret = 'your_webhook_secret'
+  expected_signature = OpenSSL::HMAC.hexdigest(
+    'SHA256',
+    secret,
+    payload
+  )
+  Rack::Utils.secure_compare(expected_signature, signature)
+end
+```
+
+</CodeGroup>
+
+## Signature Verification
+
+All webhook requests include an `X-Webhook-Signature` header for verification:
+
+```
+X-Webhook-Signature: sha256=abc123...
+```
+
+The signature is generated using HMAC SHA-256 with your webhook secret:
+
+```
+HMAC-SHA256(webhook_secret, request_body)
+```
+
+<Warning>
+  Always verify webhook signatures to ensure requests are coming from our servers. Never process webhooks without verification.
+</Warning>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Respond Quickly" icon="clock">
+    Return a `200 OK` response as quickly as possible. Process events asynchronously if needed.
+
+    ```python
+    # Good: Respond immediately, process later
+    @app.route('/webhook', methods=['POST'])
+    def webhook():
+        event = request.get_json()
+        queue.enqueue(process_event, event)
+        return 'Success', 200
+    ```
+  </Accordion>
+
+  <Accordion title="Handle Idempotency" icon="repeat">
+    Webhooks may be delivered multiple times. Use the event ID to prevent duplicate processing.
+
+    ```python
+    def process_event(event):
+        if redis.exists(event['id']):
+            return  # Already processed
+
+        # Process event
+        handle_event(event)
+
+        # Mark as processed
+        redis.set(event['id'], '1', ex=86400)  # 24 hours
+    ```
+  </Accordion>
+
+  <Accordion title="Use HTTPS" icon="lock">
+    Always use HTTPS endpoints for webhooks. We do not send webhooks to HTTP endpoints in production.
+  </Accordion>
+
+  <Accordion title="Monitor Failures" icon="chart-line">
+    Set up alerts for webhook failures. We'll retry failed webhooks with exponential backoff for up to 3 days.
+  </Accordion>
+</AccordionGroup>
+
+## Retry Logic
+
+If your endpoint returns a non-200 status code or times out, we'll retry the webhook:
+
+| Attempt | Delay |
+|---------|-------|
+| 1st retry | 1 minute |
+| 2nd retry | 5 minutes |
+| 3rd retry | 30 minutes |
+| 4th retry | 2 hours |
+| 5th retry | 12 hours |
+| 6th retry | 24 hours |
+
+<Note>
+  After 3 days of failed attempts, we'll disable the webhook endpoint and send you a notification.
+</Note>
+
+## Testing Webhooks
+
+### Local Development
+
+Use tools like ngrok to expose your local server:
+
+```bash
+# Start ngrok tunnel
+ngrok http 3000
+
+# Use the ngrok URL as your webhook endpoint
+https://abc123.ngrok.io/webhook
+```
+
+### Send Test Events
+
+In your Dashboard, you can send test events to verify your webhook handler:
+
+<Steps>
+  <Step title="Go to Webhooks">
+    Navigate to **Settings** → **Webhooks**
+  </Step>
+
+  <Step title="Select Endpoint">
+    Click on your webhook endpoint
+  </Step>
+
+  <Step title="Send Test">
+    Click **Send Test** and choose an event type
+  </Step>
+</Steps>
+
+## Webhook Logs
+
+View webhook delivery attempts and responses in your Dashboard:
+
+- Delivery status (success/failed)
+- Response status code
+- Response time
+- Full request and response payload
+
+This helps you debug webhook issues and monitor reliability.
+
+## Security Considerations
+
+<CardGroup cols={2}>
+  <Card title="Verify Signatures" icon="shield-check">
+    Always verify the webhook signature before processing
+  </Card>
+  <Card title="Use HTTPS" icon="lock">
+    Only accept webhooks over secure HTTPS connections
+  </Card>
+  <Card title="Whitelist IPs" icon="network-wired">
+    Optionally whitelist our webhook IPs: `52.89.214.238, 34.212.75.30`
+  </Card>
+  <Card title="Rate Limiting" icon="gauge">
+    Implement rate limiting to prevent abuse
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api-reference"
+  >
+    Explore all available API endpoints
+  </Card>
+  <Card
+    title="Error Handling"
+    icon="triangle-exclamation"
+    href="/guides/errors"
+  >
+    Learn how to handle errors gracefully
+  </Card>
+</CardGroup>

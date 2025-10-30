@@ -1,0 +1,260 @@
+---
+title: 'Authentication'
+description: 'Learn how to authenticate your API requests'
+---
+
+## API Keys
+
+The API uses API keys to authenticate requests. You can view and manage your API keys in the [Dashboard](https://dashboard.example.com/settings/api-keys).
+
+Your API keys carry many privileges, so be sure to keep them secure! Do not share your secret API keys in publicly accessible areas such as GitHub, client-side code, and so forth.
+
+<Warning>
+  **Keep your API keys secure!** Never expose API keys in client-side code or public repositories.
+</Warning>
+
+## Bearer Authentication
+
+Authentication to the API is performed via [Bearer Authentication](https://swagger.io/docs/specification/authentication/bearer-authentication/). Provide your API key in the `Authorization` header:
+
+```bash
+Authorization: Bearer YOUR_API_KEY
+```
+
+All API requests must be made over HTTPS. Calls made over plain HTTP will fail. API requests without authentication will also fail.
+
+## Example Request
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.example.com/v1/users/usr_123 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```python Python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_API_KEY'
+}
+
+response = requests.get(
+    'https://api.example.com/v1/users/usr_123',
+    headers=headers
+)
+
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.example.com/v1/users/usr_123', {
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY'
+  }
+});
+
+const data = await response.json();
+console.log(data);
+```
+
+```ruby Ruby
+require 'net/http'
+require 'uri'
+
+uri = URI('https://api.example.com/v1/users/usr_123')
+request = Net::HTTP::Get.new(uri)
+request['Authorization'] = 'Bearer YOUR_API_KEY'
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+  http.request(request)
+end
+
+puts response.body
+```
+
+</CodeGroup>
+
+## API Key Types
+
+<AccordionGroup>
+  <Accordion title="Publishable Keys" icon="eye">
+    Publishable keys are meant for client-side code. They can only perform read operations and limited actions.
+
+    - Format: `pk_live_...` or `pk_test_...`
+    - Safe to expose in client-side code
+    - Limited permissions
+  </Accordion>
+
+  <Accordion title="Secret Keys" icon="lock">
+    Secret keys should be kept confidential and only stored on your own servers.
+
+    - Format: `sk_live_...` or `sk_test_...`
+    - Must never be exposed publicly
+    - Full API access
+  </Accordion>
+
+  <Accordion title="Restricted Keys" icon="shield-halved">
+    Create restricted keys with specific permissions for additional security.
+
+    - Format: `rk_live_...` or `rk_test_...`
+    - Customizable permissions
+    - Recommended for production
+  </Accordion>
+</AccordionGroup>
+
+## Test vs Live Mode
+
+The API has two modes: test mode and live mode. Each mode has its own set of API keys.
+
+<Tabs>
+  <Tab title="Test Mode">
+    Use test mode to try out API calls and integration without affecting your live data.
+
+    - API keys begin with `pk_test_` or `sk_test_`
+    - No real transactions processed
+    - Separate data from live mode
+    - Free to use for testing
+
+    ```bash
+    # Test mode example
+    curl https://api.example.com/v1/users \
+      -H "Authorization: Bearer sk_test_abc123..."
+    ```
+  </Tab>
+
+  <Tab title="Live Mode">
+    Live mode uses real API keys and processes actual transactions.
+
+    - API keys begin with `pk_live_` or `sk_live_`
+    - Real transactions and data
+    - Requires completed account setup
+    - Subject to rate limits
+
+    ```bash
+    # Live mode example
+    curl https://api.example.com/v1/users \
+      -H "Authorization: Bearer sk_live_xyz789..."
+    ```
+  </Tab>
+</Tabs>
+
+## Managing API Keys
+
+### Creating a New Key
+
+<Steps>
+  <Step title="Navigate to API Keys">
+    Go to your [Dashboard Settings](https://dashboard.example.com/settings/api-keys).
+  </Step>
+
+  <Step title="Click Create Key">
+    Select the type of key you want to create (secret, publishable, or restricted).
+  </Step>
+
+  <Step title="Configure Permissions">
+    For restricted keys, select the specific permissions you want to grant.
+  </Step>
+
+  <Step title="Save Securely">
+    Copy your new API key and store it securely. You won't be able to see it again!
+  </Step>
+</Steps>
+
+### Rotating Keys
+
+We recommend rotating your API keys regularly for security:
+
+1. Create a new API key in the Dashboard
+2. Update your application to use the new key
+3. Test thoroughly in your staging environment
+4. Deploy the changes to production
+5. Delete the old key from the Dashboard
+
+<Note>
+  Keep both keys active during the transition period to avoid service interruptions.
+</Note>
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Environment Variables">
+    Store API keys in environment variables, not in your code:
+
+    ```bash
+    # .env file
+    API_KEY=sk_live_your_key_here
+    ```
+
+    ```python
+    import os
+    api_key = os.getenv('API_KEY')
+    ```
+  </Accordion>
+
+  <Accordion title="Use Restricted Keys">
+    Create restricted keys with only the permissions your application needs:
+
+    - Principle of least privilege
+    - Limits damage if key is compromised
+    - Easy to audit access
+  </Accordion>
+
+  <Accordion title="Separate Keys per Environment">
+    Use different API keys for each environment:
+
+    - Development: `sk_test_dev_...`
+    - Staging: `sk_test_staging_...`
+    - Production: `sk_live_prod_...`
+  </Accordion>
+
+  <Accordion title="Monitor Key Usage">
+    Regularly review API key usage in your Dashboard:
+
+    - Check for unusual activity
+    - Audit which keys are being used
+    - Delete unused keys
+  </Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+If authentication fails, you'll receive a `401 Unauthorized` error:
+
+```json
+{
+  "error": {
+    "type": "authentication_error",
+    "message": "Invalid API key provided",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+Common authentication errors:
+
+| Error Code | Description |
+|------------|-------------|
+| `invalid_api_key` | The API key provided is invalid |
+| `missing_api_key` | No API key was provided |
+| `expired_api_key` | The API key has expired |
+| `insufficient_permissions` | The API key doesn't have required permissions |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Make Your First Request"
+    icon="play"
+    href="/quickstart"
+  >
+    Start using your API key with our quickstart guide
+  </Card>
+  <Card
+    title="Rate Limits"
+    icon="gauge"
+    href="/guides/rate-limits"
+  >
+    Learn about API rate limits and best practices
+  </Card>
+</CardGroup>

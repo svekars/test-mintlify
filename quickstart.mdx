@@ -1,0 +1,255 @@
+---
+title: 'Quickstart'
+description: 'Start building with the API in under 5 minutes'
+---
+
+## Get Your API Key
+
+First, you'll need an API key to authenticate your requests.
+
+<Steps>
+  <Step title="Sign up for an account">
+    Go to [dashboard.example.com](https://dashboard.example.com) and create your account.
+  </Step>
+  <Step title="Navigate to API Keys">
+    In your dashboard, click on **Settings** → **API Keys**.
+  </Step>
+  <Step title="Create a new key">
+    Click **Create API Key**, give it a name, and copy the key securely.
+
+    <Warning>
+      Store your API key securely. Never share it publicly or commit it to version control.
+    </Warning>
+  </Step>
+</Steps>
+
+## Make Your First Request
+
+Let's make your first API call to retrieve a list of users.
+
+<CodeGroup>
+
+```bash cURL
+curl https://api.example.com/v1/users \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+```python Python
+import requests
+
+url = "https://api.example.com/v1/users"
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+
+response = requests.get(url, headers=headers)
+data = response.json()
+
+print(data)
+```
+
+```javascript Node.js
+const axios = require('axios');
+
+const response = await axios.get('https://api.example.com/v1/users', {
+  headers: {
+    'Authorization': 'Bearer YOUR_API_KEY',
+    'Content-Type': 'application/json'
+  }
+});
+
+console.log(response.data);
+```
+
+```go Go
+package main
+
+import (
+    "fmt"
+    "io"
+    "net/http"
+)
+
+func main() {
+    url := "https://api.example.com/v1/users"
+
+    req, _ := http.NewRequest("GET", url, nil)
+    req.Header.Add("Authorization", "Bearer YOUR_API_KEY")
+    req.Header.Add("Content-Type", "application/json")
+
+    res, _ := http.DefaultClient.Do(req)
+    defer res.Body.Close()
+
+    body, _ := io.ReadAll(res.Body)
+    fmt.Println(string(body))
+}
+```
+
+</CodeGroup>
+
+### Expected Response
+
+```json
+{
+  "data": [
+    {
+      "id": "usr_123abc",
+      "email": "user@example.com",
+      "name": "John Doe",
+      "created_at": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "has_more": false,
+  "total_count": 1
+}
+```
+
+## Create a User
+
+Now let's create a new user with a POST request.
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.example.com/v1/users \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "newuser@example.com",
+    "name": "Jane Smith"
+  }'
+```
+
+```python Python
+import requests
+
+url = "https://api.example.com/v1/users"
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+data = {
+    "email": "newuser@example.com",
+    "name": "Jane Smith"
+}
+
+response = requests.post(url, headers=headers, json=data)
+print(response.json())
+```
+
+```javascript Node.js
+const axios = require('axios');
+
+const response = await axios.post('https://api.example.com/v1/users',
+  {
+    email: 'newuser@example.com',
+    name: 'Jane Smith'
+  },
+  {
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    }
+  }
+);
+
+console.log(response.data);
+```
+
+</CodeGroup>
+
+### Expected Response
+
+```json
+{
+  "id": "usr_456def",
+  "email": "newuser@example.com",
+  "name": "Jane Smith",
+  "created_at": "2024-01-15T11:30:00Z",
+  "updated_at": "2024-01-15T11:30:00Z"
+}
+```
+
+<Check>
+  Success! You've created your first user via the API.
+</Check>
+
+## Install SDKs (Optional)
+
+For easier integration, install one of our official SDKs:
+
+<Tabs>
+  <Tab title="Python">
+    ```bash
+    pip install example-api
+    ```
+
+    ```python
+    from example_api import Client
+
+    client = Client(api_key="YOUR_API_KEY")
+    users = client.users.list()
+    ```
+  </Tab>
+
+  <Tab title="Node.js">
+    ```bash
+    npm install @example/api
+    ```
+
+    ```javascript
+    const { ExampleAPI } = require('@example/api');
+
+    const client = new ExampleAPI('YOUR_API_KEY');
+    const users = await client.users.list();
+    ```
+  </Tab>
+
+  <Tab title="Ruby">
+    ```bash
+    gem install example_api
+    ```
+
+    ```ruby
+    require 'example_api'
+
+    client = ExampleAPI::Client.new('YOUR_API_KEY')
+    users = client.users.list
+    ```
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Authentication"
+    icon="shield-halved"
+    href="/authentication"
+  >
+    Learn more about API authentication and security
+  </Card>
+  <Card
+    title="API Reference"
+    icon="book"
+    href="/api-reference"
+  >
+    Explore all available endpoints
+  </Card>
+  <Card
+    title="Webhooks"
+    icon="webhook"
+    href="/guides/webhooks"
+  >
+    Set up webhooks for real-time events
+  </Card>
+  <Card
+    title="Error Handling"
+    icon="triangle-exclamation"
+    href="/guides/errors"
+  >
+    Handle errors gracefully in your application
+  </Card>
+</CardGroup>

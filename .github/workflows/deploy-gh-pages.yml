@@ -1,0 +1,42 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Mintlify CLI
+        run: npm install -g mintlify
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start Mintlify and Build
+        run: |
+          mintlify dev &
+          MINTLIFY_PID=$!
+          sleep 10
+          wget -r -p -k -P _site http://localhost:3000 || true
+          kill $MINTLIFY_PID || true
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site/localhost:3000
+          publish_branch: gh-pages

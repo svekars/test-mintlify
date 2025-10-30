@@ -1,0 +1,12 @@
+{
+  "name": "mintlify-docs",
+  "version": "1.0.0",
+  "description": "Mintlify documentation",
+  "scripts": {
+    "dev": "mintlify dev",
+    "deploy": "gh-pages -d . -b gh-pages"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.0"
+  }
+}

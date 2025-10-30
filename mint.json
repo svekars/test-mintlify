@@ -1,0 +1,102 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Your API",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#635bff",
+    "light": "#8b85ff",
+    "dark": "#4239cc",
+    "anchors": {
+      "from": "#635bff",
+      "to": "#8b85ff"
+    }
+  },
+  "topbarLinks": [
+    {
+      "name": "Support",
+      "url": "mailto:support@example.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Dashboard",
+    "url": "https://dashboard.example.com"
+  },
+  "tabs": [
+    {
+      "name": "API Reference",
+      "url": "api-reference"
+    },
+    {
+      "name": "Guides",
+      "url": "guides"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "Community",
+      "icon": "discord",
+      "url": "https://discord.gg/example"
+    },
+    {
+      "name": "Blog",
+      "icon": "newspaper",
+      "url": "https://blog.example.com"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Get Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "authentication"
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "guides/webhooks",
+        "guides/rate-limits",
+        "guides/errors",
+        "guides/sdks"
+      ]
+    },
+    {
+      "group": "Core Resources",
+      "pages": [
+        "api-reference/users/list",
+        "api-reference/users/create",
+        "api-reference/users/retrieve",
+        "api-reference/users/update",
+        "api-reference/users/delete"
+      ]
+    },
+    {
+      "group": "Payments",
+      "pages": [
+        "api-reference/payments/list",
+        "api-reference/payments/create",
+        "api-reference/payments/retrieve"
+      ]
+    }
+  ],
+  "footerSocials": {
+    "x": "https://x.com/example",
+    "github": "https://github.com/example",
+    "linkedin": "https://www.linkedin.com/company/example"
+  },
+  "api": {
+    "baseUrl": "https://api.example.com/v1",
+    "auth": {
+      "method": "bearer",
+      "name": "Authorization"
+    },
+    "playground": {
+      "mode": "show"
+    }
+  }
+}
