@@ -26,39 +26,81 @@ jobs:
 
       - name: Start Mintlify dev server
         run: |
-          mintlify dev &
+          mintlify dev > server.log 2>&1 &
           MINTLIFY_PID=$!
           echo "MINTLIFY_PID=$MINTLIFY_PID" >> $GITHUB_ENV
           echo "Waiting for Mintlify to start..."
-          sleep 30
 
-      - name: Scrape static site
+          # Wait for server to be ready
+          for i in {1..60}; do
+            if curl -s http://localhost:3000 > /dev/null; then
+              echo "Mintlify server is ready!"
+              break
+            fi
+            echo "Waiting... ($i/60)"
+            sleep 2
+          done
+
+          echo "Server log:"
+          cat server.log
+
+      - name: Scrape static site with httrack
         run: |
-          wget --recursive \
-               --no-parent \
-               --page-requisites \
-               --html-extension \
-               --convert-links \
-               --restrict-file-names=windows \
-               --domains localhost \
-               --no-host-directories \
-               --directory-prefix=_site \
-               http://localhost:3000/
+          sudo apt-get update
+          sudo apt-get install -y httrack
+
+          mkdir -p _site
+          httrack http://localhost:3000 \
+            -O _site \
+            -v \
+            -%e0 \
+            -N0 \
+            -%P \
+            -c10 \
+            -T60 \
+            -R4 \
+            -%s \
+            '+*localhost:3000/*' \
+            -'*localhost:3000/api/*' \
+            -'*localhost:3000/_next/static/chunks/*'
 
       - name: Stop Mintlify
         if: always()
-        run: kill ${{ env.MINTLIFY_PID }} || true
+        run: |
+          kill ${{ env.MINTLIFY_PID }} || true
+          cat server.log || true
 
-      - name: Fix links and paths for GitHub Pages
+      - name: Organize files for GitHub Pages
+        run: |
+          # Move files from localhost:3000 subdirectory to root if it exists
+          if [ -d "_site/localhost_3000" ]; then
+            mv _site/localhost_3000/* _site/ 2>/dev/null || true
+            rmdir _site/localhost_3000 || true
+          fi
+
+          if [ -d "_site/localhost:3000" ]; then
+            mv "_site/localhost:3000"/* _site/ 2>/dev/null || true
+            rmdir "_site/localhost:3000" || true
+          fi
+
+          # Add .nojekyll file
+          touch _site/.nojekyll
+
+          # List what we have
+          echo "Contents of _site:"
+          ls -la _site/
+
+      - name: Fix links for GitHub Pages
         run: |
           cd _site
-          # Remove localhost references
-          find . -name "*.html" -type f -exec sed -i 's|http://localhost:3000||g' {} \;
-          # Ensure all absolute paths include /test-mintlify prefix
-          find . -name "*.html" -type f -exec sed -i 's|href="/\([^"]*\)"|href="/test-mintlify/\1"|g' {} \;
-          find . -name "*.html" -type f -exec sed -i 's|src="/\([^"]*\)"|src="/test-mintlify/\1"|g' {} \;
-          # Fix double slashes that might have been created
-          find . -name "*.html" -type f -exec sed -i 's|/test-mintlify/test-mintlify|/test-mintlify|g' {} \;
+          # Remove localhost references and fix paths
+          find . -type f \( -name "*.html" -o -name "*.css" -o -name "*.js" \) -exec sed -i \
+            -e 's|http://localhost:3000||g' \
+            -e 's|href="/|href="/test-mintlify/|g' \
+            -e 's|src="/|src="/test-mintlify/|g' \
+            -e 's|url(/|url(/test-mintlify/|g' \
+            -e 's|/test-mintlify/test-mintlify|/test-mintlify|g' \
+            {} \;
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
