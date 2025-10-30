@@ -1,0 +1,8 @@
+http://localhost:3000 -O _site -v -%e0 -N0 -%P -c10 -T60 -R4 -%s +*localhost:3000/* -*localhost:3000/api/* -*localhost:3000/_next/static/chunks/*
+File generated automatically on Thu, 30 Oct 2025 21:36:54, do NOT edit
+
+To update a mirror, just launch httrack without any parameters
+The existing cache will be used (and modified)
+To have other options, retype all parameters and launch HTTrack
+To continue an interrupted mirror, just launch httrack without any parameters
+
